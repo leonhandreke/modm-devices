@@ -12,6 +12,7 @@ from ..input.xml import XMLReader
 
 from .stm_identifier import STMIdentifier
 from . import stm
+from . import stm_peripherals
 
 LOGGER = logging.getLogger('dfg.stm.reader')
 
@@ -21,45 +22,41 @@ class STMDeviceTree:
     translates the data into a platform independent format.
     """
     rootpath = os.path.join(os.path.dirname(__file__), '..', '..', '..', '..', '..', 'STM_devices', 'mcu')
+    cmsis_headers = os.path.join(os.path.dirname(__file__), '..', '..', 'cmsis-header-stm32')
     familyFile = XMLReader(os.path.join(rootpath, 'families.xml'))
 
     @staticmethod
     def getDevicesFromFamily(family, rootpath=None):
         rawDevices = STMDeviceTree.familyFile.query("//Family[@Name='{}']/SubFamily/Mcu/@RefName".format(family))
-        # devices can contain duplicates due to Hx, Tx, Yx, Ix suffix!
-        # we treat them as single devices, since we don't care about the MCUs package
         devices = []
         for dev in sorted(rawDevices):
-            shortDev = dev[:-1] if dev.endswith('x') else dev
-            LOGGER.debug("%s:%s", dev, shortDev)
+            if len(dev) >= 14: continue;
+            shortDev = dev[:12]
             if all(not d.startswith(shortDev) for d in devices):
                 devices.append(dev)
 
-        LOGGER.debug("Found devices of family '{}': {}".format(family, ", ".join(devices)))
+        LOGGER.info("Found devices of family '{}': {}".format(family, ", ".join(devices)))
         return devices
 
     @staticmethod
     def _properties_from_partname(partname):
+        p = {}
+
         deviceNames = STMDeviceTree.familyFile.query("//Family/SubFamily/Mcu[starts-with(@RefName,'{}')]".format(partname))
-        # if len(deviceNames) > 1:
-        #     LOGGER.error("Duplicate device files for '%s': %s", partname, [d.get('Name') for d in deviceNames])
-        comboDeviceName = deviceNames[0].get('Name')
+        comboDeviceName = sorted([d.get('Name') for d in deviceNames])[0]
         device_file = XMLReader(os.path.join(STMDeviceTree.rootpath, comboDeviceName + '.xml'))
-        properties = {}
         did = STMIdentifier.from_string(partname.lower())
-        properties['id'] = did
+        p['id'] = did
 
         LOGGER.info("Parsing '%s'", did.string)
 
         # information about the core and architecture
-        coreLut = {'m0': 'v6m', 'm3': 'v7m', 'm4': 'v7em', 'm7': 'v7em'}
         core = device_file.query('//Core')[0].text.replace('ARM ', '').lower()
-        properties['architecture'] = coreLut[core.replace('cortex-', '')]
         if core.endswith('m4') or core.endswith('m7'):
             core += 'f'
-        if did["family"] in ['f7'] and did["name"] not in ['745', '746', '756']:
+        if did["family"] in ['f7'] and did["name"] not in ['45', '46', '56']:
             core += 'd'
-        properties['core'] = core
+        p['core'] = core
 
         # flash and ram sizes
         # The <ram> and <flash> can occur multiple times.
@@ -83,8 +80,8 @@ class STMDeviceTree:
             sizeIndexFlash = len(flashs) - 1
 
         mem_start, mem_model = stm.getMemoryForDevice(did)
-        total_ram = ram = rams[sizeIndexRam] + mem_model['sram1']
-        flash = flashs[sizeIndexFlash] + mem_model['flash']
+        total_ram = ram = rams[sizeIndexRam] * 1024 + mem_model['sram1']
+        flash = flashs[sizeIndexFlash] * 1024 + mem_model['flash']
         if 'ccm' in mem_model:
             total_ram += mem_model['ccm']
         if 'backup' in mem_model:
@@ -92,31 +89,31 @@ class STMDeviceTree:
         if 'itcm' in mem_model:
             total_ram += mem_model['itcm']
             total_ram += mem_model['dtcm']
-        properties['ram'] = total_ram * 1024
-        properties['flash'] = flash * 1024
+        p['ram'] = total_ram
+        p['flash'] = flash
 
-        memories = []
         # first get the real SRAM1 size
         for mem, val in mem_model.items():
             if any(s in mem for s in ['2', '3', 'dtcm']):
                 ram -= val
 
+        memories = []
         # add all memories
         for mem, val in mem_model.items():
             if '1' in mem:
                 memories.append({'name': 'sram1',
                                  'access' : 'rwx',
-                                 'start': "0x{:02X}".format(mem_start['sram']),
+                                 'start': "0x{:02X}".format(mem_start['sram' if 'sram' in mem_start else 'sram1']),
                                  'size': str(ram)})
             elif '2' in mem:
                 memories.append({'name': 'sram2',
                                  'access' : 'rwx',
-                                 'start': "0x{:02X}".format(mem_start['sram'] + ram * 1024),
+                                 'start': "0x{:02X}".format((mem_start['sram'] + ram) if 'sram' in mem_start else mem_start['sram2']),
                                  'size': str(val)})
             elif '3' in mem:
                 memories.append({'name': 'sram3',
                                  'access': 'rwx',
-                                 'start': "0x{:02X}".format(mem_start['sram'] + ram * 1024 + mem_model['sram2'] * 1024),
+                                 'start': "0x{:02X}".format(mem_start['sram'] + ram + mem_model['sram2']),
                                  'size': str(val)})
             elif 'flash' in mem:
                 memories.append({'name': 'flash',
@@ -129,92 +126,86 @@ class STMDeviceTree:
                                  'start': "0x{:02X}".format(mem_start[mem]),
                                  'size': str(val)})
 
-        properties['memories'] = memories
+        p['memories'] = memories
 
         # packaging
         package = device_file.query("//@Package")[0]
-        properties['pin-count'] = re.findall('[0-9]+', package)[0]
-        properties['package'] = re.findall('[A-Za-z\.]+', package)[0]
-
-        # device header
-        properties['header'] = 'stm32' + did["family"] + 'xx.h'
+        p['pin-count'] = re.findall('[0-9]+', package)[0]
+        p['package'] = re.findall('[A-Za-z\.]+', package)[0]
 
         # device defines
         defines = []
+        cmsis_folder = os.path.join(STMDeviceTree.cmsis_headers, "stm32{}xx".format(did["family"]), "include")
+        family_header = "stm32{}xx.h".format(did["family"])
+        dev_def = None
 
-        dev_def = stm.getDefineForDevice(did)
+        with open(os.path.join(cmsis_folder, family_header), 'r', errors="replace") as headerFile:
+            match = re.findall("if defined\((?P<define>STM32[F|L].....)\)", headerFile.read())
+            if match:
+                dev_def = stm.getDefineForDevice(did, match)
         if dev_def is None:
             LOGGER.error("Define not found for device '{}'".format(did.string))
-        else:
-            defines.append(dev_def)
+            return None
 
-        properties['define'] = defines
+        p['cmsis_define'] = dev_def
 
+        def clean_up_version(version):
+            match = re.search("v[1-9]_[0-9x]", version.replace('.', '_'))
+            if match:
+                version = match.group(0).replace('_', '.')
+            else:
+                print(version)
+            return version
 
-        gpios = []
-        properties['gpios'] = gpios
-        gpio_afs = []
-        properties['gpio_afs'] = gpio_afs
-        peripherals = []
-        properties['peripherals'] = peripherals
         modules = []
-        properties['modules'] = modules
+        for ip in device_file.query("//IP"):
+            # These IPs are all software modules, NOT hardware modules. Their version string is weird too.
+            if ip.get('Name') in ['FATFS', 'FREERTOS', 'CORTEX_M7', 'NVIC', 'USB_DEVICE', 'USB_HOST', 'LWIP', 'LIBJPEG']:
+                continue
 
-        omodules = device_file.query("//IP/@InstanceName")
-        omodules = sorted(list(set(omodules)))
-        LOGGER.debug("Available Modules are:\n" + STMDeviceTree._modulesToString(omodules))
+            rversion = ip.get('Version')
+            module = (ip.get('Name'), ip.get('InstanceName'), clean_up_version(rversion))
+
+            if module[0] == 'DMA':
+                # lets load additional information about the DMA
+                dmaFile = XMLReader(os.path.join(STMDeviceTree.rootpath, 'IP', 'DMA-' + rversion + '_Modes.xml'))
+                for dma in dmaFile.query("//IP/ModeLogicOperator/Mode[starts-with(@Name,'DMA')]/@Name"):
+                    modules.append((module[0].lower(), dma.lower(), module[2].lower()))
+                continue
+            if module[0].startswith('TIM'):
+                module = ('TIM',) + module[1:]
+
+            modules.append(tuple([m.lower() for m in module]))
+
+        modules = [m + stm_peripherals.getPeripheralData(did, m) for m in modules]
+
+        p['modules'] = modules
+        LOGGER.debug("Available Modules are:\n" + STMDeviceTree._modulesToString(modules))
+        instances = [m[1] for m in modules]
 
         # add entire interrupt vectore table here.
         # I have not found a way to extract the correct vector _position_ from the ST device files
         # so we have to swallow our pride and just parse the header file
-        # ext/cmsis/stm32/Device/ST/STM32F4xx/Include/
-        headerFilePath = os.path.join(os.path.dirname(__file__), '..', '..', '..', '..', '..', 'modm', 'ext', 'st', 'stm32{}xx'.format(did["family"]), 'Include', '{}.h'.format(dev_def.lower()))
-        with open(headerFilePath, 'r') as headerFile:
+        headerFilePath = os.path.join(cmsis_folder, '{}.h'.format(dev_def.lower()))
+        with open(headerFilePath, 'r', errors="replace") as headerFile:
             match = re.search("typedef enum.*?/\*\*.*?/\*\*.*?\*/(?P<table>.*?)} IRQn_Type;", headerFile.read(), re.DOTALL)
-            if not match:
-                LOGGER.error("Interrupt vector table not found for device '{}'".format(did.string))
-                exit(1)
+        if not match:
+            LOGGER.error("Interrupt vector table not found for device '{}'".format(did.string))
+            return None
+        ivectors = []
+        for line in match.group('table').split('\n')[1:-1]:
+            if '=' not in line:  # avoid multiline comment
+                continue
 
-            # print dev_def.lower(), match.group('table')
-
-            ivectors = []
-            for line in match.group('table').split('\n')[1:-1]:
-                if '=' not in line:  # avoid multiline comment
-                    continue
-
-                name, pos = line.split('/*!<')[0].split('=')
-                pos = int(pos.strip(' ,'))
-                name = name.strip()[:-5]
-                if did["family"] in ['f3'] and pos == 42 and name == 'USBWakeUp':
-                    continue
-                ivectors.append({'position': pos, 'name': name})
-
-            LOGGER.debug("Found interrupt vectors:\n" + "\n".join(["{}: {}".format(v['position'], v['name']) for v in ivectors]))
-            properties['interrupts'] = ivectors
-
-        for m in omodules:
-            if any(m.startswith(per) for per in ['TIM', 'UART', 'USART', 'ADC', 'CAN', 'SPI', 'I2C', 'FSMC', 'FMC', 'RNG', 'RCC', 'USB']):
-                modules.append(m)
-
-        if 'CAN' in modules:
-            modules.append('CAN1')
-
-        if did["family"] in ['f2', 'f3', 'f4', 'f7']:
-            modules.append('ID')
-
-        dmaFile = None
-        if 'DMA' in omodules:
-            # lets load additional information about the DMA
-            dma_file = device_file.query("//IP[@Name='DMA']")[0].get('Version')
-            dma_file = os.path.join(STMDeviceTree.rootpath, 'IP', 'DMA-' + dma_file + '_Modes.xml')
-            dmaFile = XMLReader(dma_file)
-            dmas = [d.get('Name') for d in dmaFile.query("//IP/ModeLogicOperator/Mode[starts-with(@Name,'DMA')]")]
-            modules.extend(dmas)
-
-        invertMode = {'out': 'in', 'in': 'out', 'io': 'io'}
-        nameToMode = {'rx': 'in', 'tx': 'out', 'cts': 'in', 'rts': 'out', 'ck': 'out',  # Uart
-                     'miso': 'in', 'mosi': 'out', 'nss': 'io', 'sck': 'out',  # Spi
-                     'scl': 'out', 'sda': 'io'}  # I2c
+            name, pos = line.split('/*!<')[0].split('=')
+            pos = int(pos.strip(' ,'))
+            name = name.strip()[:-5]
+            # What is this. I don't even.
+            if did["family"] in ['f3'] and pos == 42 and name == 'USBWakeUp':
+                continue
+            ivectors.append({'position': pos, 'name': name})
+        LOGGER.debug("Found interrupt vectors:\n" + "\n".join(["{}: {}".format(v['position'], v['name']) for v in ivectors]))
+        p['interrupts'] = ivectors
 
         # lets load additional information about the GPIO IP
         ip_file = device_file.query("//IP[@Name='GPIO']")[0].get('Version')
@@ -224,213 +215,147 @@ class STMDeviceTree:
         pins = device_file.query("//Pin[@Type='I/O'][starts-with(@Name,'P')]")
         pins = sorted(pins, key=lambda p: [p.get('Name')[1:2], int(p.get('Name')[:4].split('-')[0].split('/')[0][2:])])
 
+        gpios = []
+        remaps = {}
+
+        # expand instance and channel information
+        def snfn(name):
+            nname = ""
+            nnumber = ""
+            for ch in name:
+                if ch.isdigit():
+                    nnumber += ch
+                else:
+                    nname += ch
+            return (nname, int(nnumber) if len(nnumber) else None)
+
+        def snfn2(driver, signal):
+            if 'i2c' in driver or 'i2s' in driver:
+                return (driver[:3], snfn(driver[2:])[1], signal)
+            elif driver == 'tsc':
+                return (driver, None, signal)
+            elif driver.startswith('usb'):
+                return ('usb', driver.replace('usb', '') if driver != 'usb' else None, signal)
+            elif 'osc' in signal:
+                return ('rcc', 'ls' if '32' in signal else 'hs', signal)
+            return snfn(driver) + (signal,)
+
+        def rename_af(af):
+            # renames signals to fit better into our schema
+            if af[0][0] == 'cec':
+                af = (('hdmi_cec', 'cec'), af[1])
+            if af[0][0] == 'ir':
+                af = (('irtim',) + af[0][1:], af[1])
+            if af[0][0] == 'eventout':
+                af = (('sys', 'eventout'), af[1])
+            if af[0][0] == 'sys' and '-' in af[0][1]:
+                return [(('sys', v), af[1]) for v in af[0][1].split('-')]
+            if af[0][0] == 'rcc' and 'mco' in af[0][1] and len(af[0]) > 2:
+                af = (('rcc', 'mco', 'out' + af[0][2]), af[1])
+            if af[0][0] == 'rcc' and 'osc' in af[0][1]:
+                af = (('rcc' + 'ls' if '32' in af[0][1] else 'hs', af[0][2]), af[1])
+            if af[0][0] == 'crs':
+                af = (('usb',) + af[0], af[1])
+            if af[0][0] == 'usb' and len(af[0]) > 3:
+                af = (('usb' + af[0][2], af[0][-1]), af[1])
+            if af[0][0] == 'rtc' and af[0][1] in ['out', 'in'] and len(af[0]) > 2:
+                af = (('rtc', af[0][2], af[0][1]), af[1])
+            if af[0][0].startswith('opamp') and len(af[0]) == 3:
+                return []
+            if (af[0][0].startswith('opamp') or af[0][0].startswith('comp')) and 'in' in af[0][1]:
+                af = ((af[0][0], af[0][1][:-1], af[0][1][-1]), af[1])
+            if af[0][0] == 'tsc' and len(af[0]) > 2:
+                af = (('tsc', af[0][1], af[0][2][2:]), af[1])
+            if len(af[0]) > 2:
+                af = ((af[0][0], ''.join(af[0][1:])), af[1])
+            return [af]
+
+        if did['family'] == 'f1':
+            grouped_f1_signals = gpioFile.compactQuery("//GPIO_Pin/PinSignal/@Name")
+
         for pin in pins:
-            name = pin.get('Name')
-            # F1 does not have pin 'alternate functions' only pin 'remaps' which switch groups of pins
-            if did["family"] == 'f1':
-                pinSignals = gpioFile.compactQuery("//GPIO_Pin[@Name='{}']/PinSignal/RemapBlock/..".format(name))
-                rawAltFunctions = {a.get('Name'): a[0].get('Name')[-1:] for a in pinSignals}
-                altFunctions = {}
-                for alt_name in rawAltFunctions:
-                    key = alt_name.split('_')[0].lower()
-                    if key not in stm.stm32f1_remaps:
-                        key += alt_name.split('_')[1].lower()
-                    if key in stm.stm32f1_remaps:
-                        mask = stm.stm32f1_remaps[key]['mask']
-                        pos = stm.stm32f1_remaps[key]['position']
-                        value = stm.stm32f1_remaps[key]['mapping'][int(rawAltFunctions[alt_name])]
-                        altFunctions[alt_name] = '{},{},{}'.format(pos, mask, value)
-                # Add the rest of the pins
-                allSignals = device_file.compactQuery("//Pin[@Name='{}']/Signal".format(name))
-                for sig in allSignals:
-                    if not any(sig.get('Name') in name.get('Name') for name in pinSignals):
-                        pinSignals.append(sig)
+            rname = pin.get('Name')
+            name = rname[:4].split('-')[0].split('/')[0].strip()
 
-            else:  # F0, F3, F4 and F7
-                pinSignals = gpioFile.compactQuery("//GPIO_Pin[@Name='%s']/PinSignal/SpecificParameter[@Name='GPIO_AF']/.." % name)
-                altFunctions = { a.get('Name') : a[0][0].text.replace('GPIO_AF', '')[:2].replace('_', '') for a in pinSignals }
+            # the analog channels are only available in the Mcu file, not the GPIO file
+            localSignals = device_file.compactQuery("//Pin[@Name='{}']/Signal[not(@Name='GPIO')]/@Name".format(rname))
+            altFunctions = []
 
-                # the analog channels are only available in the Mcu file, not the GPIO file
-                analogSignals = device_file.compactQuery("//Pin[@Name='{}']/Signal[starts-with(@Name,'ADC')]".format(name))
-                pinSignals.extend(analogSignals)
-
-            name = name[:4].split('-')[0].split('/')[0].strip()
-
-            gpio = {'port': name[1:2], 'id': name[2:]}
-            gpios.append(gpio)
+            if did['family'] == 'f1':
+                altFunctions = [ (tuple(s.lower().split('_')), '-1') for s in localSignals if s not in grouped_f1_signals]
+            else:
+                allSignals = gpioFile.compactQuery("//GPIO_Pin[@Name='{}']/PinSignal/SpecificParameter[@Name='GPIO_AF']/..".format(rname))
+                signalMap = { a.get('Name'): a[0][0].text.lower().replace('gpio_af', '')[:2].replace('_', '') for a in allSignals }
+                altFunctions = [ (tuple(s.lower().split('_')), (signalMap[s] if s in signalMap else '-1')) for s in localSignals ]
 
             afs = []
+            for af in altFunctions:
+                straf = str(af)
+                try:
+                    naf = rename_af(af)
+                except Exception as e:
+                    print(straf, e)
+                    exit(1)
+                for saf in naf:
+                    naf = {}
+                    naf['driver'], naf['instance'], naf['name'] = snfn2(saf[0][0], saf[0][1])
+                    naf['af'] = saf[1] if int(saf[1]) >= 0 else None
+                    afs.append(naf)
+                    # print(af, "->", saf, naf)
 
-            for signal in [s.get('Name') for s in pinSignals]:
-                raw_names = signal.split('_')
-                if len(raw_names) < 2:
-                    continue
+            gpio = (name[1:2].lower(), name[2:].lower(), afs)
+            gpios.append(gpio)
+            # print(gpio[0].upper(), gpio[1], afs)
+            # LOGGER.debug("%s%s: %s ->", gpio[0].upper(), gpio[1])
 
-                if not any(m.startswith(raw_names[0]) for m in modules):
-                    continue
+        # exit(1)
 
-                instance = raw_names[0][-1]
-                if not instance.isdigit():
-                    instance = ""
+        if did['family'] == 'f1':
+            for remap in gpioFile.compactQuery("//GPIO_Pin/PinSignal/RemapBlock/@Name"):
+                module = remap.split('_')[0].lower()
+                config = remap.split('_')[1].replace('REMAP', '').replace('IREMAP', '')
+                mapping = stm.getRemapForModuleConfig(module, config)
 
-                name = raw_names[1].lower()
-                mode = None
-                if name in nameToMode and nameToMode[name] != 'io':
-                    mode = nameToMode[name]
-                af_id = None
-                if signal in altFunctions:
-                    af_id = altFunctions[signal]
+                mpins = []
+                for pin in gpioFile.compactQuery("//GPIO_Pin/PinSignal/RemapBlock[@Name='{}']/..".format(remap)):
+                    name = pin.getparent().get('Name')[:4].split('-')[0].split('/')[0].strip().lower()
+                    pport, ppin = name[1:2], name[2:]
+                    if not any([pp[0] == pport and pp[1] == ppin for pp in gpios]):
+                        continue
+                    mmm = {'port': pport, 'pin': ppin}
+                    af = rename_af( (tuple(pin.get('Name').lower().split('_')), '-1') )[0]
+                    _, _, mmm['name'] = snfn2(af[0][0], af[0][1])
+                    mpins.append(mmm)
 
-                if signal.startswith('USART') or signal.startswith('UART'):
-                    af = {'peripheral' : 'Uart' + instance,
-                          'name': name.capitalize()}
-                    if mode:
-                        af.update({'type': mode})
-                    if af_id:
-                        af.update({'id': af_id})
-                    afs.append(af)
+                if module not in remaps:
+                    remaps[module] = {
+                        'mask': mapping['mask'],
+                        'position': mapping['position'],
+                        'groups': {}
+                    }
+                    remaps[module]['driver'], remaps[module]['instance'], _ = snfn2(module, "")
+                if len(mpins) > 0:
+                    remaps[module]['groups'][mapping['mapping']] = mpins
+                    LOGGER.debug("{:<20}{}".format(module + '_' + config, ["{}{}:{}".format(b['port'], b['pin'], b['name']) for b in mpins]))
 
-                    mapName = {'rx': 'miso', 'tx': 'mosi', 'ck': 'sck'}
-                    if signal.startswith('USART') and name in mapName:
-                        af = {'peripheral' : 'UartSpiMaster' + instance,
-                              'name': mapName[name].capitalize()}
-                        if mode:
-                            af.update({'type': mode})
-                        if af_id:
-                            af.update({'id': af_id})
-                        afs.append(af)
+            # import json
+            # print(json.dumps(remaps, indent=4))
 
-                elif signal.startswith('SPI'):
-                    af = {'peripheral' : 'SpiMaster' + instance,
-                          'name': name.capitalize()}
-                    if mode:
-                        af.update({'type': mode})
-                    if af_id:
-                        af.update({'id': af_id})
-                    afs.append(dict(af))
-                    # invertName = {'miso': 'somi', 'mosi': 'simo', 'nss': 'nss', 'sck': 'sck'}
-                    # af.update({   'peripheral' : 'SpiSlave' + instance,
-                    #           'name': invertName[name].capitalize()})
-                    # if mode:
-                    #   af.update({'type': invertMode[nameToMode[name]]})
-                    # afs.append(af)
+        p['remaps'] = remaps
+        p['gpios'] = gpios
 
-                if signal.startswith('CAN'):
-                    if instance == '':
-                        instance = '1'
-                    af = {'peripheral' : 'Can' + instance,
-                          'name': name.capitalize()}
-                    if mode:
-                        af.update({'type': mode})
-                    if af_id:
-                        af.update({'id': af_id})
-                    afs.append(af)
-
-                if signal.startswith('RCC'):
-                    if 'MCO' in signal:
-                        device_id = "" if len(raw_names) < 3 else raw_names[2]
-                        af = {'peripheral': 'ClockOutput' + device_id}
-                        af.update({'type': 'out'})
-                        if af_id:
-                            af.update({'id': af_id})
-                        afs.append(af)
-
-                if signal.startswith('I2C'):
-                    if name in ['scl', 'sda']:
-                        af = {'peripheral' : 'I2cMaster' + instance,
-                              'name': name.capitalize()}
-                        if mode:
-                            af.update({'type': mode})
-                        if af_id:
-                            af.update({'id': af_id})
-                        afs.append(af)
-
-                if signal.startswith('TIM'):
-                    for tname in raw_names[1:]:
-                        tinstance = raw_names[0].replace('TIM', '')
-                        nice_name = 'ExternalTrigger'
-                        output_type = 'in'
-                        if 'CH' in tname:
-                            nice_name = tname.replace('CH', 'Channel')
-                            output_type = None
-                        elif 'BKIN' in tname:
-                            nice_name = 'BreakIn'
-                        af = {'peripheral' : 'Timer' + tinstance,
-                              'name': nice_name}
-                        if output_type:
-                            af.update({'type': output_type})
-                        if af_id:
-                            af.update({'id': af_id})
-                        afs.append(af)
-
-                if signal.startswith('ADC'):
-                    if 'exti' not in name:
-                        af = {'peripheral' : 'Adc' + instance,
-                              'name': name.replace('in', 'Channel').capitalize(),
-                              'type': 'analog'}
-                        afs.append(af)
-
-                if signal.startswith('SYS'):
-                    if 'mco' in name:
-                        af = {'peripheral' : signal.replace('SYS', '').replace('_', ''),
-                              'type': 'out',
-                              'id': '0'}
-                        afs.append(af)
-
-                if signal.startswith('USB_OTG_FS') and raw_names[3] in ['DM', 'DP']:
-                    af = {'peripheral' : 'Usb',
-                          'name': raw_names[3].capitalize()}
-                    if af_id:
-                        af.update({'id': af_id})
-                    else:
-                        af.update({'id': '10'})
-                    afs.append(af)
-
-                if signal.startswith('USB_') and raw_names[1] in ['DM', 'DP']:
-                    af = {'peripheral': 'Usb',
-                          'name': raw_names[1].capitalize()}
-                    if af_id:
-                        af.update({'id': af_id})
-                    # For the STM32F1 the USB pins aren't enabled like other
-                    # alternative functions, but by simply enabling the USB core.
-                    # else:
-                    #   af.update({'id': '10'})
-                    afs.append(af)
-
-                if signal.startswith('FSMC_') or signal.startswith('FMC_'):
-                    if not raw_names[1].startswith('DA'):
-                        af = {'peripheral' : 'Fsmc',
-                              'name': raw_names[1].capitalize()}
-                        if af_id:
-                            af.update({'id': af_id})
-                        afs.append(af)
-
-            # sort after key id and then add all without ids
-            # this sorting only affect the way the debug information is displayed
-            # in stm_writer the AFs are sorted again anyway
-            sorted_afs = [a for a in afs if 'id' in a]
-            sorted_afs.sort(key=lambda k: (int(k['id'].split(',')[0]), k['peripheral']))
-            sorted_afs.extend([a for a in afs if 'id' not in a])
-
-            for af in sorted_afs:
-                af['gpio_port'] = gpio['port']
-                af['gpio_id'] = gpio['id']
-                gpio_afs.append(af)
-
-        if 'CAN' in modules:
-            modules.remove('CAN')
-
-        return properties
+        return p
 
     @staticmethod
     def _modulesToString(modules):
         string = ""
-        char = modules[0][0:1]
-        for module in modules:
-            if not module.startswith(char):
+        mods = sorted(modules)
+        char = mods[0][0][0:1]
+        for _, instance, _, _, _, _ in mods:
+            if not instance.startswith(char):
                 string += "\n"
-            string += module + " \t"
-            char = module[0][0:1]
+            string += instance + " \t"
+            char = instance[0][0:1]
         return string
 
     @staticmethod
@@ -439,91 +364,127 @@ class STMDeviceTree:
         tree.ids.append(p['id'])
         LOGGER.info(("Generating Device Tree for '%s'" % p['id'].string))
 
-        def topLevelOrder(e):
-            order = ['attribute-flash', 'attribute-ram', 'attribute-core', 'header', 'attribute-define']
-            if e.name in order:
-                if e.name in ['attribute-flash', 'attribute-ram']:
-                    return (order.index(e.name), int(e['value']))
-                else:
-                    return (order.index(e.name), e['value'])
-            return (len(order), -1)
-        tree.addSortKey(topLevelOrder)
+        # def topLevelOrder(e):
+        #     order = ['attribute-flash', 'attribute-ram', 'attribute-core', 'header', 'attribute-define']
+        #     if e.name in order:
+        #         if e.name in ['attribute-flash', 'attribute-ram']:
+        #             return (order.index(e.name), int(e['value']))
+        #         else:
+        #             return (order.index(e.name), e['value'])
+        #     return (len(order), -1)
+        # tree.addSortKey(topLevelOrder)
 
-        STMDeviceTree.addDeviceAttributesToNode(p, tree, 'attribute-flash')
-        STMDeviceTree.addDeviceAttributesToNode(p, tree, 'attribute-ram')
-        STMDeviceTree.addDeviceAttributesToNode(p, tree, 'attribute-core')
+        # STMDeviceTree.addDeviceAttributesToNode(p, tree, 'attribute-flash')
+        # STMDeviceTree.addDeviceAttributesToNode(p, tree, 'attribute-ram')
         # STMDeviceTree.addDeviceAttributesToNode(p, tree, 'attribute-pin-count')
-        STMDeviceTree.addDeviceAttributesToNode(p, tree, 'header')
-        STMDeviceTree.addDeviceAttributesToNode(p, tree, 'attribute-define')
 
         def driverOrder(e):
             if e.name == 'driver':
-                if e['type'] == 'core':
+                if e['name'] == 'core':
                     # place the core at the very beginning
-                    return ('aaaaaaa', e['compatible'])
-                if e['type'] == 'gpio':
+                    return ('aaaaaaa', e['type'])
+                if e['name'] == 'gpio':
                     # place the gpio at the very end
-                    return ('zzzzzzz', e['compatible'])
+                    return ('zzzzzzz', e['type'])
                 # sort remaining drivers by type and compatible strings
-                return (e['type'], e['compatible'])
+                return (e['name'], e['type'])
             return ("", "")
         tree.addSortKey(driverOrder)
 
         core_child = tree.addChild('driver')
-        core_child.setAttributes('type', 'core', 'compatible', 'cortex')
-        core_child.setIdentifier(lambda e: e['type'] + e['compatible'])
-
+        core_child.setAttributes('name', 'core', 'type', p['core'])
         # Memories
         STMDeviceTree.addMemoryToNode(p, core_child)
         STMDeviceTree.addInterruptTableToNode(p, core_child)
 
-        adc_map = {'f0': 'stm32f0',
-                   'f1': 'stm32f1',
-                   'f2': 'stm32f2',
-                   'f3': 'stm32f3',
-                   'f4': 'stm32',
-                   'f7': 'stm32'}
-        # ADC
-        if p['id']["family"] == 'f3' and p['id']["name"] == '373':
-            STMDeviceTree.addModuleAttributesToNode(p, tree, 'ADC', 'adc', 'stm32')
-        else:
-            STMDeviceTree.addModuleAttributesToNode(p, tree, 'ADC', 'adc', adc_map[p['id']["family"]])
-        # CAN
-        STMDeviceTree.addModuleAttributesToNode(p, tree, 'CAN', 'can')
-        # Clock
-        clock_child = tree.addChild('driver')
-        clock_child.setAttributes('type', 'clock', 'compatible', 'stm32')
-        clock_child.setIdentifier(lambda e: e['type'] + e['compatible'])
-        # DAC
-        # STMDeviceTree.addModuleAttributesToNode(p, tree, 'DAC', 'dac')
-        # DMA
-        STMDeviceTree.addModuleAttributesToNode(p, tree, 'DMA', 'dma', 'stm32')
-        # FSMC
-        STMDeviceTree.addModuleAttributesToNode(p, tree, ['FMC', 'FSMC'], 'fsmc')
-        # I2C
-        i2c_map = {'f0': 'stm32f0',
-                   'f1': 'stm32',
-                   'f2': 'stm32',
-                   'f3': 'stm32f3',
-                   'f4': 'stm32',
-                   'f7': 'stm32'}
-        STMDeviceTree.addModuleAttributesToNode(p, tree, 'I2C', 'i2c', i2c_map[p['id']["family"]])
-        # return
-        # ID
-        STMDeviceTree.addModuleAttributesToNode(p, tree, 'ID', 'id')
-        # Random
-        STMDeviceTree.addModuleAttributesToNode(p, tree, 'RNG', 'random')
-        # SPI
-        STMDeviceTree.addModuleAttributesToNode(p, tree, 'SPI', 'spi')
-        STMDeviceTree.addModuleAttributesToNode(p, tree, ['UART', 'USART'], 'spi', 'stm32_uart')
-        # Timer
-        STMDeviceTree.addModuleAttributesToNode(p, tree, 'TIM', 'timer')
-        # UART
-        STMDeviceTree.addModuleAttributesToNode(p, tree, ['UART', 'USART'], 'uart')
-        # USB
-        STMDeviceTree.addModuleAttributesToNode(p, tree, ['OTG_FS_DEVICE', 'USB_FS', 'OTG_FS', 'USB'], 'usb', 'stm32_fs')
-        # GPIO
-        STMDeviceTree.addGpioToNode(p, tree)
+        modules = {}
+        for m, i, _, h, f, pr in p['modules']:
+            # if m in ['fatfs', 'freertos']: continue;
+            if m+h not in modules:
+                modules[m+h] = (m, h, f, pr, [i])
+            else:
+                if (modules[m+h][1] != h):
+                    print(modules[m+h], '<-', (m, h, f, pr, i))
+                modules[m+h][4].append(i)
+
+        # add all other modules
+        gpio_version = 'stm32'
+        for name, hardware, features, protocols, instances in modules.values():
+            if name == 'gpio':
+                gpio_version = hardware
+                continue
+
+            driver = tree.addChild('driver')
+            driver.setAttributes('name', name, 'type', hardware)
+            def driver_sort_key(e):
+                if e.name == 'feature':
+                    return (0, 0, e['value'])
+                return (1, int(e['value']), "")
+            driver.addSortKey(driver_sort_key)
+            for f in features:
+                feat = driver.addChild('feature')
+                feat.setValue(f)
+            # for pr in protocols:
+            #     prot = driver.addChild('protocol')
+            #     prot.setValue(pr)
+            # Add all instances to this driver
+            if any(i != name for i in instances):
+                for i in instances:
+                    inst = driver.addChild('instance')
+                    inst.setValue(i[len(name):])
+
+        # GPIO driver
+        gpio_driver = tree.addChild('driver')
+        gpio_driver.setAttributes('name', 'gpio', 'type', gpio_version)
+
+        if p['id']['family'] == 'f1':
+            # Add the remap group tree
+            for remap in p['remaps'].values():
+                if len(remap['groups']) == 0: continue;
+                remap_ch = gpio_driver.addChild('remap')
+                remap_ch.setAttributes(['driver'], remap)
+                if remap['instance'] is not None:
+                    remap_ch.setAttributes(['instance'], remap)
+                remap_ch.setAttributes(['position', 'mask'], remap)
+                remap_ch.addSortKey(lambda e: int(e['id']))
+
+                for group, pins in remap['groups'].items():
+                    group_ch = remap_ch.addChild('group')
+                    group_ch.setAttributes('id', group)
+                    group_ch.addSortKey(lambda e : (e['port'], int(e['pin']), e['name']))
+
+                    for pin in pins:
+                        pin_ch = group_ch.addChild('signal')
+                        pin_ch.setAttributes(['port', 'pin', 'name'], pin)
+
+        # Sort these things
+        def sort_gpios(e):
+            if e['driver'] is None:
+                return (100, "", 0, e['port'], int(e['pin']))
+            else:
+                return (int(e['position']), e['driver'], int(0 if e['instance'] is None else e['instance']), "", 0)
+        gpio_driver.addSortKey(sort_gpios)
+
+        for port, pin, signals in p['gpios']:
+            pin_driver = gpio_driver.addChild('gpio')
+            pin_driver.setAttributes('port', port, 'pin', pin)
+            pin_driver.addSortKey(lambda e: (int(e['af']) if e['af'] is not None else -1,
+                                             e['driver'],
+                                             e['instance'] if e['instance'] is not None else '',
+                                             e['name']))
+            # add all signals
+            for s in signals:
+                afid, driver, instance, name = s['af'], s['driver'], s['instance'], s['name']
+                # if driver.startswith('tc'): driver = 'tc';
+                # if driver == 'cpu': driver = 'core'; instance = 'core';
+                # add the af node
+                af = pin_driver.addChild('signal')
+                if afid is not None and afid != '':
+                    af.setAttributes('af', afid)
+                af.setAttributes('driver', driver)
+                if instance is not None:
+                    af.setAttributes('instance', instance)
+                af.setAttributes('name', name)
 
         return tree
 
@@ -570,9 +531,9 @@ class STMDeviceTree:
             peripherals.append(peripheral)
 
         driver = node.addChild('driver')
-        driver.setAttributes('type', name, 'compatible', family)
+        driver.setAttributes('name', name, 'type', family)
         driver.addSortKey(lambda e: int(e['value']))
-        driver.setIdentifier(lambda e: e['type'] + e['compatible'])
+        driver.setIdentifier(lambda e: e['name'] + e['hw'])
 
         for module in modules:
             instances = []
@@ -592,39 +553,7 @@ class STMDeviceTree:
                 child.setIdentifier(lambda e: e.name)
 
     @staticmethod
-    def addGpioToNode(p, node):
-        gpios = p['gpios']
-
-        driver = node.addChild('driver')
-        driver.setAttributes('type', 'gpio', 'compatible', 'stm32f1' if p['id']["family"] == 'f1' else 'stm32')
-        driver.setIdentifier(lambda e: e['type'] + e['compatible'])
-
-        for gpio in gpios:
-            gpio_child = driver.addChild('gpio')
-            gpio_child.setAttributes(['port', 'id'], gpio)
-            gpio_child.setIdentifier(lambda e: e['port'] + e['id'])
-            # search for alternate functions
-            matches = []
-            for af in p['gpio_afs']:
-                if af['gpio_port'] == gpio['port'] and af['gpio_id'] == gpio['id']:
-                    af_child = gpio_child.addChild('af')
-                    af_child.setIdentifier(lambda e: e['peripheral'] + e['name'])
-                    af_child.setAttributes(['id', 'peripheral', 'name', 'type'], af)
-            if p['id']["family"] == 'f1':
-                gpio_child.addSortKey(lambda e : (int(e['id'].split(',')[0]) if e['id'] else 1e6, e['peripheral'] if e['peripheral'] else "", e['name']))
-            else:
-                gpio_child.addSortKey(lambda e : (int(e['id']) if e['id'] else 1e6, e['peripheral'] if e['peripheral'] else "", e['name']))
-        # sort the node children by port and id
-        driver.addSortKey(lambda e : (e['port'], int(e['id'])))
-
-    @staticmethod
-    def _hasCoreCoupledMemory(p):
-        for memory in [memory.value for memory in p['memories'].values]:
-            if any(mem['name'] == 'ccm' for mem in memory):
-                return True
-        return False
-
-    @staticmethod
     def from_partname(partname):
         p = STMDeviceTree._properties_from_partname(partname)
+        if p is None: return None;
         return STMDeviceTree._device_tree_from_properties(p)
