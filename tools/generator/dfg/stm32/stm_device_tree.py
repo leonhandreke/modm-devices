@@ -21,7 +21,7 @@ class STMDeviceTree:
     This STM specific part description file reader knows the structure and
     translates the data into a platform independent format.
     """
-    rootpath = os.path.join(os.path.dirname(__file__), '..', '..', '..', '..', '..', 'STM_devices', 'mcu')
+    rootpath = os.path.join(os.path.dirname(__file__), '..', '..', 'raw-device-data', 'stm32-devices', 'mcu')
     cmsis_headers = os.path.join(os.path.dirname(__file__), '..', '..', 'cmsis-header-stm32')
     familyFile = XMLReader(os.path.join(rootpath, 'families.xml'))
 
