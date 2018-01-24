@@ -77,7 +77,7 @@
       <instance value="f0"/>
       <instance device-name="32|64|128|192|256" value="resc"/>
     </driver>
-    <driver device-name="384" name="tc" type="tc2">
+    <driver name="tc" type="tc2">
       <instance value="c2"/>
       <instance value="d2"/>
       <instance value="e2"/>
@@ -168,14 +168,14 @@
         <signal device-name="384" driver="awex" instance="c" name="oc0als"/>
         <signal device-name="32|64|128|192|256" driver="tc" instance="awexc" name="oc0als"/>
         <signal driver="tc" instance="c0" name="oc0a"/>
-        <signal device-name="384" driver="tc" instance="c2" name="loc2a"/>
+        <signal driver="tc" instance="c2" name="loc2a"/>
         <signal driver="twi" instance="c" name="sda"/>
       </gpio>
       <gpio port="C" pin="1">
         <signal device-name="384" driver="awex" instance="c" name="oc0ahs"/>
         <signal device-name="32|64|128|192|256" driver="tc" instance="awexc" name="oc0ahs"/>
         <signal driver="tc" instance="c0" name="oc0b"/>
-        <signal device-name="384" driver="tc" instance="c2" name="loc2b"/>
+        <signal driver="tc" instance="c2" name="loc2b"/>
         <signal driver="twi" instance="c" name="scl"/>
         <signal driver="usart" instance="c0" name="xck"/>
       </gpio>
@@ -183,14 +183,14 @@
         <signal device-name="384" driver="awex" instance="c" name="oc0bls"/>
         <signal device-name="32|64|128|192|256" driver="tc" instance="awexc" name="oc0bls"/>
         <signal driver="tc" instance="c0" name="oc0c"/>
-        <signal device-name="384" driver="tc" instance="c2" name="loc2c"/>
+        <signal driver="tc" instance="c2" name="loc2c"/>
         <signal driver="usart" instance="c0" name="rxd"/>
       </gpio>
       <gpio port="C" pin="3">
         <signal device-name="384" driver="awex" instance="c" name="oc0bhs"/>
         <signal device-name="32|64|128|192|256" driver="tc" instance="awexc" name="oc0bhs"/>
         <signal driver="tc" instance="c0" name="oc0d"/>
-        <signal device-name="384" driver="tc" instance="c2" name="loc2d"/>
+        <signal driver="tc" instance="c2" name="loc2d"/>
         <signal driver="usart" instance="c0" name="txd"/>
       </gpio>
       <gpio port="C" pin="4">
@@ -204,7 +204,7 @@
         <signal device-name="32|64|128|192|256" driver="tc" instance="awexc" name="oc0cls"/>
         <signal driver="tc" instance="c0" name="oc0a"/>
         <signal driver="tc" instance="c1" name="oc1a"/>
-        <signal device-name="384" driver="tc" instance="c2" name="hoc2a"/>
+        <signal driver="tc" instance="c2" name="hoc2a"/>
       </gpio>
       <gpio port="C" pin="5">
         <signal device-name="384" driver="awex" instance="c" name="oc0chs"/>
@@ -213,7 +213,7 @@
         <signal device-name="32|64|128|192|256" driver="tc" instance="awexc" name="oc0chs"/>
         <signal driver="tc" instance="c0" name="oc0b"/>
         <signal driver="tc" instance="c1" name="oc1b"/>
-        <signal device-name="384" driver="tc" instance="c2" name="hoc2b"/>
+        <signal driver="tc" instance="c2" name="hoc2b"/>
         <signal driver="usart" instance="c0" name="xck"/>
       </gpio>
       <gpio port="C" pin="6">
@@ -224,7 +224,7 @@
         <signal driver="spi" instance="c" name="miso"/>
         <signal device-name="32|64|128|192|256" driver="tc" instance="awexc" name="oc0dls"/>
         <signal driver="tc" instance="c0" name="oc0c"/>
-        <signal device-name="384" driver="tc" instance="c2" name="hoc2c"/>
+        <signal driver="tc" instance="c2" name="hoc2c"/>
         <signal driver="usart" instance="c0" name="rxd"/>
       </gpio>
       <gpio port="C" pin="7">
@@ -237,109 +237,109 @@
         <signal driver="spi" instance="c" name="sck"/>
         <signal device-name="32|64|128|192|256" driver="tc" instance="awexc" name="oc0dhs"/>
         <signal driver="tc" instance="c0" name="oc0d"/>
-        <signal device-name="384" driver="tc" instance="c2" name="hoc2d"/>
+        <signal driver="tc" instance="c2" name="hoc2d"/>
         <signal driver="usart" instance="c0" name="txd"/>
       </gpio>
       <gpio port="D" pin="0">
         <signal driver="tc" instance="d0" name="oc0a"/>
-        <signal device-name="384" driver="tc" instance="d2" name="loc2a"/>
+        <signal driver="tc" instance="d2" name="loc2a"/>
       </gpio>
       <gpio port="D" pin="1">
         <signal driver="tc" instance="d0" name="oc0b"/>
-        <signal device-name="384" driver="tc" instance="d2" name="loc2b"/>
+        <signal driver="tc" instance="d2" name="loc2b"/>
         <signal driver="usart" instance="d0" name="xck"/>
       </gpio>
       <gpio port="D" pin="2">
         <signal driver="tc" instance="d0" name="oc0c"/>
-        <signal device-name="384" driver="tc" instance="d2" name="loc2c"/>
+        <signal driver="tc" instance="d2" name="loc2c"/>
         <signal driver="usart" instance="d0" name="rxd"/>
       </gpio>
       <gpio port="D" pin="3">
         <signal driver="tc" instance="d0" name="oc0d"/>
-        <signal device-name="384" driver="tc" instance="d2" name="loc2d"/>
+        <signal driver="tc" instance="d2" name="loc2d"/>
         <signal driver="usart" instance="d0" name="txd"/>
       </gpio>
       <gpio port="D" pin="4">
         <signal driver="spi" instance="d" name="ss"/>
-        <signal device-name="384" driver="tc" instance="d2" name="hoc2a"/>
+        <signal driver="tc" instance="d2" name="hoc2a"/>
       </gpio>
       <gpio port="D" pin="5">
         <signal driver="spi" instance="d" name="mosi"/>
-        <signal device-name="384" driver="tc" instance="d2" name="hoc2b"/>
+        <signal driver="tc" instance="d2" name="hoc2b"/>
       </gpio>
       <gpio port="D" pin="6">
         <signal driver="spi" instance="d" name="miso"/>
-        <signal device-name="384" driver="tc" instance="d2" name="hoc2c"/>
+        <signal driver="tc" instance="d2" name="hoc2c"/>
       </gpio>
       <gpio port="D" pin="7">
         <signal driver="spi" instance="d" name="sck"/>
-        <signal device-name="384" driver="tc" instance="d2" name="hoc2d"/>
+        <signal driver="tc" instance="d2" name="hoc2d"/>
       </gpio>
       <gpio port="E" pin="0">
         <signal driver="tc" instance="e0" name="oc0a"/>
-        <signal device-name="384" driver="tc" instance="e2" name="loc2a"/>
+        <signal driver="tc" instance="e2" name="loc2a"/>
         <signal driver="twi" instance="e" name="sda"/>
       </gpio>
       <gpio port="E" pin="1">
         <signal driver="tc" instance="e0" name="oc0b"/>
-        <signal device-name="384" driver="tc" instance="e2" name="loc2b"/>
+        <signal driver="tc" instance="e2" name="loc2b"/>
         <signal driver="twi" instance="e" name="scl"/>
         <signal driver="usart" instance="e0" name="xck"/>
       </gpio>
       <gpio port="E" pin="2">
         <signal driver="osc" name="tosc2"/>
         <signal driver="tc" instance="e0" name="oc0c"/>
-        <signal device-name="384" driver="tc" instance="e2" name="loc2c"/>
+        <signal driver="tc" instance="e2" name="loc2c"/>
         <signal driver="usart" instance="e0" name="rxd"/>
       </gpio>
       <gpio port="E" pin="3">
         <signal driver="osc" name="tosc1"/>
         <signal driver="tc" instance="e0" name="oc0d"/>
-        <signal device-name="384" driver="tc" instance="e2" name="loc2d"/>
+        <signal driver="tc" instance="e2" name="loc2d"/>
         <signal driver="usart" instance="e0" name="txd"/>
       </gpio>
       <gpio port="E" pin="4">
-        <signal device-name="384" driver="tc" instance="e2" name="hoc2a"/>
+        <signal driver="tc" instance="e2" name="hoc2a"/>
       </gpio>
       <gpio port="E" pin="5">
-        <signal device-name="384" driver="tc" instance="e2" name="hoc2b"/>
+        <signal driver="tc" instance="e2" name="hoc2b"/>
       </gpio>
       <gpio port="E" pin="6">
-        <signal device-name="384" driver="tc" instance="e2" name="hoc2c"/>
+        <signal driver="tc" instance="e2" name="hoc2c"/>
       </gpio>
       <gpio port="E" pin="7">
-        <signal device-name="384" driver="tc" instance="e2" name="hoc2d"/>
+        <signal driver="tc" instance="e2" name="hoc2d"/>
       </gpio>
       <gpio port="F" pin="0">
         <signal driver="tc" instance="f0" name="oc0a"/>
-        <signal device-name="384" driver="tc" instance="f2" name="loc2a"/>
+        <signal driver="tc" instance="f2" name="loc2a"/>
       </gpio>
       <gpio port="F" pin="1">
         <signal driver="tc" instance="f0" name="oc0b"/>
-        <signal device-name="384" driver="tc" instance="f2" name="loc2b"/>
+        <signal driver="tc" instance="f2" name="loc2b"/>
         <signal device-name="384" driver="usart" instance="f0" name="xck"/>
       </gpio>
       <gpio port="F" pin="2">
         <signal driver="tc" instance="f0" name="oc0c"/>
-        <signal device-name="384" driver="tc" instance="f2" name="loc2c"/>
+        <signal driver="tc" instance="f2" name="loc2c"/>
         <signal device-name="384" driver="usart" instance="f0" name="rxd"/>
       </gpio>
       <gpio port="F" pin="3">
         <signal driver="tc" instance="f0" name="oc0d"/>
-        <signal device-name="384" driver="tc" instance="f2" name="loc2d"/>
+        <signal driver="tc" instance="f2" name="loc2d"/>
         <signal device-name="384" driver="usart" instance="f0" name="txd"/>
       </gpio>
       <gpio port="F" pin="4">
-        <signal device-name="384" driver="tc" instance="f2" name="hoc2a"/>
+        <signal driver="tc" instance="f2" name="hoc2a"/>
       </gpio>
       <gpio port="F" pin="5">
-        <signal device-name="384" driver="tc" instance="f2" name="hoc2b"/>
+        <signal driver="tc" instance="f2" name="hoc2b"/>
       </gpio>
       <gpio port="F" pin="6">
-        <signal device-name="384" driver="tc" instance="f2" name="hoc2c"/>
+        <signal driver="tc" instance="f2" name="hoc2c"/>
       </gpio>
       <gpio port="F" pin="7">
-        <signal device-name="384" driver="tc" instance="f2" name="hoc2d"/>
+        <signal driver="tc" instance="f2" name="hoc2d"/>
       </gpio>
       <gpio port="R" pin="0">
         <signal driver="osc" name="xtal2"/>

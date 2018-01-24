@@ -199,14 +199,14 @@
         <signal device-name="328" driver="ptc" name="y15"/>
       </gpio>
       <gpio port="E" pin="0">
-        <signal driver="exint" name="pcint24"/>
+        <signal device-name="328" driver="exint" name="pcint24"/>
         <signal device-name="328" driver="ptc" name="x08"/>
         <signal device-name="328" driver="ptc" name="y16"/>
         <signal device-name="328" driver="tc" instance="4" name="icp"/>
         <signal device-name="328" driver="twi" instance="1" name="sda"/>
       </gpio>
       <gpio port="E" pin="1">
-        <signal driver="exint" name="pcint25"/>
+        <signal device-name="328" driver="exint" name="pcint25"/>
         <signal device-name="328" driver="ptc" name="x09"/>
         <signal device-name="328" driver="ptc" name="y17"/>
         <signal device-name="328" driver="tc" instance="4" name="t"/>
@@ -214,7 +214,7 @@
       </gpio>
       <gpio port="E" pin="2">
         <signal driver="adc" name="6"/>
-        <signal driver="exint" name="pcint27"/>
+        <signal device-name="328" driver="exint" name="pcint27"/>
         <signal device-name="328" driver="ptc" name="y06"/>
         <signal device-name="328" driver="spi" instance="1" name="ss"/>
         <signal device-name="328" driver="tc" instance="3" name="icp"/>

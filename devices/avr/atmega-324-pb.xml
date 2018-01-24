@@ -206,6 +206,7 @@
         <signal driver="exint" name="pcint28"/>
         <signal driver="ptc" name="x4"/>
         <signal driver="ptc" name="y12"/>
+        <signal driver="tc" instance="1" name="ocb"/>
         <signal driver="usart" instance="1" name="xck"/>
       </gpio>
       <gpio port="D" pin="5">
@@ -220,7 +221,6 @@
         <signal driver="ptc" name="y14"/>
         <signal driver="spi" instance="1" name="ss"/>
         <signal driver="tc" instance="1" name="icp"/>
-        <signal driver="tc" instance="1" name="ocb"/>
         <signal driver="tc" instance="2" name="ocb"/>
       </gpio>
       <gpio port="D" pin="7">

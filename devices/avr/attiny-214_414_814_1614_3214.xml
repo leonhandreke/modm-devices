@@ -277,6 +277,8 @@
         <signal driver="evsys" name="evapb4"/>
         <signal driver="evsys" name="evspb4"/>
         <signal driver="ptc" name="ds1"/>
+        <signal device-name="1614|3214" driver="ptc" name="x13"/>
+        <signal device-name="1614|3214" driver="ptc" name="y13"/>
         <signal driver="tc" instance="a0" name="wo1"/>
       </gpio>
       <gpio device-name="1614|3214" port="B" pin="4">
@@ -286,6 +288,8 @@
         <signal driver="evsys" name="evapb4"/>
         <signal driver="evsys" name="evspb4"/>
         <signal driver="ptc" name="ds1"/>
+        <signal driver="ptc" name="x13"/>
+        <signal driver="ptc" name="y13"/>
         <signal driver="tc" instance="a0" name="wo1"/>
       </gpio>
       <gpio device-name="814|1614|3214" port="B" pin="5">
