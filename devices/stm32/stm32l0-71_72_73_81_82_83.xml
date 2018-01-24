@@ -57,6 +57,7 @@
     <valid-device>stm32l073vbt</valid-device>
     <valid-device>stm32l073vzi</valid-device>
     <valid-device>stm32l073vzt</valid-device>
+    <valid-device>stm32l081cbt</valid-device>
     <valid-device>stm32l081czt</valid-device>
     <valid-device>stm32l081kzt</valid-device>
     <valid-device>stm32l081kzu</valid-device>

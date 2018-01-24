@@ -248,7 +248,7 @@
         <signal driver="adc" name="in8"/>
         <signal af="1" driver="tim" instance="3" name="ch3"/>
         <signal af="2" driver="tim" instance="1" name="ch2n"/>
-        <signal device-name="48" af="3" driver="tsc" name="g32"/>
+        <signal device-name="48" device-pin="c|t" af="3" driver="tsc" name="g32"/>
       </gpio>
       <gpio device-pin="c|e|k|t" port="b" pin="1">
         <signal driver="adc" name="in9"/>

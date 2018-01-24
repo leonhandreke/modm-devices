@@ -324,10 +324,6 @@
         <signal af="6" driver="tim" instance="1" name="ch3n"/>
         <signal af="8" driver="comp" instance="4" name="out"/>
       </gpio>
-      <gpio device-name="18" device-package="t" port="b" pin="2">
-        <signal driver="comp" instance="4" name="inm"/>
-        <signal af="3" driver="tsc" name="g34"/>
-      </gpio>
       <gpio port="b" pin="3">
         <signal af="0" driver="sys" name="jtdo"/>
         <signal af="0" driver="sys" name="traceswo"/>
@@ -367,14 +363,7 @@
         <signal af="4" driver="i2c" instance="1" name="scl"/>
         <signal af="7" driver="usart" instance="1" name="tx"/>
       </gpio>
-      <gpio device-name="18" device-package="y" port="b" pin="7">
-        <signal af="1" driver="tim" instance="17" name="ch1n"/>
-        <signal af="3" driver="tsc" name="g54"/>
-        <signal af="4" driver="i2c" instance="1" name="sda"/>
-        <signal af="7" driver="usart" instance="1" name="rx"/>
-        <signal device-name="28" af="10" driver="tim" instance="3" name="ch4"/>
-      </gpio>
-      <gpio device-name="28" device-package="t" port="b" pin="7">
+      <gpio device-pin="c" port="b" pin="7">
         <signal af="1" driver="tim" instance="17" name="ch1n"/>
         <signal af="3" driver="tsc" name="g54"/>
         <signal af="4" driver="i2c" instance="1" name="sda"/>

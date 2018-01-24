@@ -32,6 +32,7 @@
     <valid-device>stm32f429vit</valid-device>
     <valid-device>stm32f429zet</valid-device>
     <valid-device>stm32f429zgt</valid-device>
+    <valid-device>stm32f429zgy</valid-device>
     <valid-device>stm32f429zit</valid-device>
     <valid-device>stm32f429ziy</valid-device>
     <valid-device>stm32f437aih</valid-device>
@@ -55,6 +56,7 @@
     <valid-device>stm32f439vgt</valid-device>
     <valid-device>stm32f439vit</valid-device>
     <valid-device>stm32f439zgt</valid-device>
+    <valid-device>stm32f439zgy</valid-device>
     <valid-device>stm32f439zit</valid-device>
     <valid-device>stm32f439ziy</valid-device>
     <driver name="core" type="cortex-m4f">
@@ -443,7 +445,7 @@
         <signal af="9" driver="can" instance="2" name="rx"/>
         <signal af="10" driver="usb" instance="hs" name="d7"/>
         <signal af="11" driver="eth" name="ppsout"/>
-        <signal device-name="27|29|37" device-pin="a|i|v|z" af="12" driver="fmc" name="sdcke1"/>
+        <signal device-name="27|37" device-pin="a|i|v|z" af="12" driver="fmc" name="sdcke1"/>
         <signal device-name="29|39" device-pin="a|b|i|n|z" af="12" driver="fmc" name="sdcke1"/>
         <signal af="13" driver="dcmi" name="d10"/>
       </gpio>
@@ -452,7 +454,7 @@
         <signal af="4" driver="i2c" instance="1" name="scl"/>
         <signal af="7" driver="usart" instance="1" name="tx"/>
         <signal af="9" driver="can" instance="2" name="tx"/>
-        <signal device-name="27|29|37" device-pin="a|i|v|z" af="12" driver="fmc" name="sdne1"/>
+        <signal device-name="27|37" device-pin="a|i|v|z" af="12" driver="fmc" name="sdne1"/>
         <signal device-name="29|39" device-pin="a|b|i|n|z" af="12" driver="fmc" name="sdne1"/>
         <signal af="13" driver="dcmi" name="d5"/>
       </gpio>
@@ -553,7 +555,7 @@
         <signal driver="adc" instance="2" name="in10"/>
         <signal driver="adc" instance="3" name="in10"/>
         <signal af="10" driver="usb" instance="hs" name="stp"/>
-        <signal device-name="27|29|37" device-pin="a|i|v|z" af="12" driver="fmc" name="sdnwe"/>
+        <signal device-name="27|37" device-pin="a|i|v|z" af="12" driver="fmc" name="sdnwe"/>
         <signal device-name="29|39" device-pin="a|b|i|n|z" af="12" driver="fmc" name="sdnwe"/>
       </gpio>
       <gpio port="c" pin="1">
@@ -570,7 +572,7 @@
         <signal af="6" driver="i2s" instance="2" name="extsd"/>
         <signal af="10" driver="usb" instance="hs" name="dir"/>
         <signal af="11" driver="eth" name="txd2"/>
-        <signal device-name="27|29|37" device-pin="a|i|v|z" af="12" driver="fmc" name="sdne0"/>
+        <signal device-name="27|37" device-pin="a|i|v|z" af="12" driver="fmc" name="sdne0"/>
         <signal device-name="29|39" device-pin="a|b|i|n|z" af="12" driver="fmc" name="sdne0"/>
       </gpio>
       <gpio port="c" pin="3">
@@ -581,7 +583,7 @@
         <signal af="5" driver="spi" instance="2" name="mosi"/>
         <signal af="10" driver="usb" instance="hs" name="nxt"/>
         <signal af="11" driver="eth" name="txclk"/>
-        <signal device-name="27|29|37" device-pin="a|i|v|z" af="12" driver="fmc" name="sdcke0"/>
+        <signal device-name="27|37" device-pin="a|i|v|z" af="12" driver="fmc" name="sdcke0"/>
         <signal device-name="29|39" device-pin="a|b|i|n|z" af="12" driver="fmc" name="sdcke0"/>
       </gpio>
       <gpio port="c" pin="4">

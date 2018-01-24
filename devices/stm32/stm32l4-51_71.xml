@@ -354,7 +354,6 @@
         <signal af="1" driver="tim" instance="1" name="ch3"/>
         <signal device-name="51" af="4" driver="i2c" instance="1" name="sda"/>
         <signal af="7" driver="usart" instance="1" name="rx"/>
-        <signal device-name="51" af="10" driver="usb" name="crssync"/>
         <signal device-name="51" af="13" driver="sai" instance="1" name="sda"/>
         <signal device-name="71" af="14" driver="tim" instance="17" name="bkin"/>
       </gpio>

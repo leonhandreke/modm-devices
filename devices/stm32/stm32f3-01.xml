@@ -6,7 +6,9 @@
     <valid-device>stm32f301c6t</valid-device>
     <valid-device>stm32f301c8t</valid-device>
     <valid-device>stm32f301c8y</valid-device>
+    <valid-device>stm32f301k6t</valid-device>
     <valid-device>stm32f301k6u</valid-device>
+    <valid-device>stm32f301k8t</valid-device>
     <valid-device>stm32f301k8u</valid-device>
     <valid-device>stm32f301r6t</valid-device>
     <valid-device>stm32f301r8t</valid-device>
@@ -276,7 +278,7 @@
         <signal af="3" driver="tsc" name="g32"/>
         <signal af="6" driver="tim" instance="1" name="ch2n"/>
       </gpio>
-      <gpio device-pin="c|r" port="b" pin="1">
+      <gpio device-package="t|y" port="b" pin="1">
         <signal driver="adc" instance="1" name="in12"/>
         <signal af="3" driver="tsc" name="g33"/>
         <signal af="6" driver="tim" instance="1" name="ch3n"/>

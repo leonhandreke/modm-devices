@@ -60,7 +60,7 @@
       <vector position="36" name="SPI2"/>
       <vector position="37" name="USART1"/>
       <vector position="38" name="USART2"/>
-      <vector device-pin="r|v|z" position="39" name="USART3"/>
+      <vector position="39" name="USART3"/>
       <vector position="40" name="EXTI15_10"/>
       <vector position="41" name="RTC_Alarm"/>
       <vector position="42" name="OTG_FS_WKUP"/>
@@ -172,7 +172,7 @@
       <feature value="over8"/>
       <instance value="1"/>
       <instance value="2"/>
-      <instance device-pin="r|v|z" value="3"/>
+      <instance value="3"/>
       <instance value="6"/>
     </driver>
     <driver name="usb_otg_fs" type="stm32-v2.2"/>
@@ -410,7 +410,7 @@
         <signal af="5" driver="i2s" instance="2" name="ck"/>
         <signal af="5" driver="spi" instance="2" name="sck"/>
         <signal af="6" driver="i2s" instance="3" name="mck"/>
-        <signal device-pin="r|v|z" af="7" driver="usart" instance="3" name="tx"/>
+        <signal af="7" driver="usart" instance="3" name="tx"/>
         <signal af="9" driver="fmp" instance="21" name="scl"/>
         <signal af="12" driver="sdio" name="d7"/>
       </gpio>
@@ -437,7 +437,7 @@
         <signal af="6" driver="i2s" instance="4" name="ws"/>
         <signal af="6" driver="spi" instance="4" name="nss"/>
         <signal af="7" driver="spi" instance="3" name="sck"/>
-        <signal device-pin="r|v|z" af="8" driver="usart" instance="3" name="ck"/>
+        <signal af="8" driver="usart" instance="3" name="ck"/>
         <signal af="9" driver="can" instance="2" name="rx"/>
         <signal af="10" driver="dfsdm" instance="1" name="datin1"/>
         <signal device-pin="v|z" af="12" driver="fsmc" name="d13"/>

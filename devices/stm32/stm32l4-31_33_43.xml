@@ -313,7 +313,7 @@
         <signal af="1" driver="tim" instance="1" name="ch3"/>
         <signal af="4" driver="i2c" instance="1" name="sda"/>
         <signal af="7" driver="usart" instance="1" name="rx"/>
-        <signal af="10" driver="usb" name="crssync"/>
+        <signal device-name="33|43" af="10" driver="usb" name="crssync"/>
         <signal device-name="33|43" af="11" driver="lcd" name="com2"/>
         <signal af="13" driver="sai" instance="1" name="sda"/>
       </gpio>

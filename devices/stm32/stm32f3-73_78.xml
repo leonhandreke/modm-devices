@@ -18,6 +18,7 @@
     <valid-device>stm32f378cct</valid-device>
     <valid-device>stm32f378rct</valid-device>
     <valid-device>stm32f378rcy</valid-device>
+    <valid-device>stm32f378vch</valid-device>
     <valid-device>stm32f378vct</valid-device>
     <driver name="core" type="cortex-m4f">
       <memory device-size="8" name="flash" access="rx" start="0x8000000" size="65536"/>

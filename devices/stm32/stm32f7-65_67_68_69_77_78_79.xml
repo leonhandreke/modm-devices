@@ -11,7 +11,9 @@
     <valid-device>stm32f765iit</valid-device>
     <valid-device>stm32f765ngh</valid-device>
     <valid-device>stm32f765nih</valid-device>
+    <valid-device>stm32f765vgh</valid-device>
     <valid-device>stm32f765vgt</valid-device>
+    <valid-device>stm32f765vih</valid-device>
     <valid-device>stm32f765vit</valid-device>
     <valid-device>stm32f765zgt</valid-device>
     <valid-device>stm32f765zit</valid-device>
@@ -23,7 +25,9 @@
     <valid-device>stm32f767iit</valid-device>
     <valid-device>stm32f767ngh</valid-device>
     <valid-device>stm32f767nih</valid-device>
+    <valid-device>stm32f767vgh</valid-device>
     <valid-device>stm32f767vgt</valid-device>
+    <valid-device>stm32f767vih</valid-device>
     <valid-device>stm32f767vit</valid-device>
     <valid-device>stm32f767zgt</valid-device>
     <valid-device>stm32f767zit</valid-device>
@@ -40,6 +44,7 @@
     <valid-device>stm32f777iik</valid-device>
     <valid-device>stm32f777iit</valid-device>
     <valid-device>stm32f777nih</valid-device>
+    <valid-device>stm32f777vih</valid-device>
     <valid-device>stm32f777vit</valid-device>
     <valid-device>stm32f777zit</valid-device>
     <valid-device>stm32f778aiy</valid-device>
